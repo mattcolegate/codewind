@@ -9,6 +9,10 @@
 # Contributors:
 #     IBM Corporation - initial API and implementation
 #*******************************************************************************
+# Envars
+#
+# CODEWIND_HOME - set to the .codewind directory in your home directory
+# CODEWIND_ECLIPSE_WORSPACE - set to your Eclipse Workspace directory.
 
 if [ -z "$CODEWIND_HOME" ]; then
   CODEWIND_HOME=$HOMEPATH/.codewind
@@ -40,8 +44,8 @@ done
 # Collect Codewind PFE workspace
 
 pfeContainerID=$(docker ps -a -q  --filter name=codewind-pfe)
-# set CODEWIND_VERSION -- need a better way of finding correct line
-eval `docker inspect --format='{{index .Config.Env 3}}' $pfeContainerID`
+# set CODEWIND_VERSION for later
+eval `docker inspect --format='{{range $_, $value := .Config.Env}}{{println $value}}{{end}}' $pfeContainerID | grep CODEWIND_VERSION`
 echo "Collecting PFE workspace"
 docker cp $pfeContainerID:/codewind-workspace .
 
@@ -52,5 +56,35 @@ cp $CODEWIND_HOME/docker-compose.yaml .
 # Collect CWCTL version number
 echo "Collecting CWCTL version"
 $CODEWIND_HOME/$CODEWIND_VERSION/cwctl --version > cwctl.version
+
+# Attempt to gather VSCode logs
+echo "Collecting VSCode logs"
+case $OSTYPE in
+  "darwin")
+    vsCodeLogsDir=$HOME/Library/Application Support/Code/logs
+    ;;
+  "linux-gnu")
+    vsCodeLogsDir=$HOME/.config/Code/logs
+    ;;
+  "msys"|"cygwin"|"win32")
+    vsCodeLogsDir=$HOME/AppData/Roaming/Code/logs
+    ;;
+  *)
+esac
+if [ -d $vsCodeLogsDir ]; then
+  mkdir -p vsCodeLogs
+  cp -R $vsCodeLogsDir/*  vsCodeLogs
+else
+  echo "Unable to collect VSCode logs"
+fi
+
+# Attempt to gather Eclipse Logs
+echo "Collecting Eclipse logs"
+if [ -z "$CODEWIND_ECLIPSE_WORSPACE" ]; then
+  echo "Unable to collect Eclipse logs - check CODEWIND_ECLIPSE_WORSPACE is set to your Codewind Eclipse Workspace directory"
+else
+  mkdir -p eclipseLogs
+  cp $CODEWIND_ECLIPSE_WORSPACE/.metadata/*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.log eclipseLogs
+fi
 
 echo "Finished!"

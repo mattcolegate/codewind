@@ -84,7 +84,7 @@ if [ -z "$CODEWIND_ECLIPSE_WORSPACE" ]; then
   echo "Unable to collect Eclipse logs - check CODEWIND_ECLIPSE_WORSPACE is set to your Codewind Eclipse Workspace directory"
 else
   mkdir -p eclipseLogs
-  cp $CODEWIND_ECLIPSE_WORSPACE/.metadata/*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.log eclipseLogs
+  cp -t eclipseLogs $CODEWIND_ECLIPSE_WORSPACE/.metadata/*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.*.log $CODEWIND_ECLIPSE_WORSPACE/.metadata/.log
 fi
 
 echo "Finished!"
